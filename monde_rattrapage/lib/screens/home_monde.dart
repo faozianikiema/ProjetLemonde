@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:monde_rattrapage/models/rss_item.dart';
+import 'package:provider/provider.dart';
 import 'package:monde_rattrapage/screens/get_item_rss.dart';
-import 'package:monde_rattrapage/services/fetch_rss_item.dart';
+import 'package:monde_rattrapage/provider/rss_provider.dart';
 
 class HomeMonde extends StatefulWidget {
   const HomeMonde({super.key});
@@ -11,41 +11,63 @@ class HomeMonde extends StatefulWidget {
 }
 
 class _HomeMondeState extends State<HomeMonde> {
-  late Future<List<RSSItem>> _futureItems;
-
   @override
   void initState() {
     super.initState();
-    _futureItems = fetchRSSItem();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<RssProvider>(context, listen: false).loadItems();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Le journal LeMonde'), backgroundColor: const Color.fromARGB(146, 235, 72, 197)),
-      body: FutureBuilder<List<RSSItem>>(
-        future: _futureItems,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+      appBar: AppBar(
+        title: const Text('Le journal LeMonde'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.calendar_today),
+            tooltip: 'Trier par date',
+            onPressed: () {
+              Provider.of<RssProvider>(
+                context,
+                listen: false,
+              ).changerTri(ContrainteTri.date);
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.sort_by_alpha),
+            tooltip: 'Trier par titre',
+            onPressed: () {
+              Provider.of<RssProvider>(
+                context,
+                listen: false,
+              ).changerTri(ContrainteTri.titre);
+            },
+          ),
+        ],
+        backgroundColor: const Color.fromARGB(254, 47, 18, 235),
+        foregroundColor: const Color.fromARGB(255, 254, 255, 255),
+      ),
+      body: Consumer<RssProvider>(
+        builder: (context, rssProvider, child) {
+          if (rssProvider.isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (snapshot.hasError) {
-            return Center(child: Text('Erreur : ${snapshot.error}'));
+          if (rssProvider.erreur != null) {
+            return Center(child: Text('Erreur : ${rssProvider.erreur}'));
           }
-          final items = snapshot.data ?? [];
+
+          final items = rssProvider.items;
+          if (items.isEmpty) {
+            return const Center(child: Text('Aucun article disponible.'));
+          }
+
           return ListView.builder(
             itemCount: items.length,
             itemBuilder: (context, index) {
               final item = items[index];
-              return ListTile(
-                title: Text(item.title),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => GetItemRss(item: item)),
-                  );
-                },
-              );
+              return GetItemRss(item: item);
             },
           );
         },
