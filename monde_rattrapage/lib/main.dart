@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:monde_rattrapage/provider/rss_provider.dart';
 import 'package:monde_rattrapage/screens/home_monde.dart';
+import 'package:provider/provider.dart';
 
 void main() {
   runApp(const MyApp());
@@ -14,10 +16,13 @@ class MyApp extends StatelessWidget {
       title: 'Journal Le Monde',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color.fromARGB(146, 72, 172, 235),
+          seedColor: const Color.fromARGB(0, 251, 252, 255),
         ),
       ),
-      home: const HomeMonde(),
+      home: ChangeNotifierProvider(
+        create: (context) => RssProvider(),
+        child: const HomeMonde(),
+      ),
     );
   }
 }
